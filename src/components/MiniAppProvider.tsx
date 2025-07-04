@@ -2,11 +2,16 @@
 
 import { useEffect, useState, ReactNode } from 'react';
 import { sdk } from '@farcaster/miniapp-sdk';
+import { WagmiProvider } from 'wagmi';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { wagmiConfig } from '@/lib/wagmi';
 import type { MiniAppContext as MiniAppContextType } from '@/types';
 
 interface MiniAppProviderProps {
   children: ReactNode;
 }
+
+const queryClient = new QueryClient();
 
 export function MiniAppProvider({ children }: MiniAppProviderProps) {
   const [context, setContext] = useState<MiniAppContextType | null>(null);
@@ -91,9 +96,13 @@ export function MiniAppProvider({ children }: MiniAppProviderProps) {
   }
 
   return (
-    <MiniAppContext.Provider value={context}>
-      {children}
-    </MiniAppContext.Provider>
+    <QueryClientProvider client={queryClient}>
+      <WagmiProvider config={wagmiConfig}>
+        <MiniAppContext.Provider value={context}>
+          {children}
+        </MiniAppContext.Provider>
+      </WagmiProvider>
+    </QueryClientProvider>
   );
 }
 

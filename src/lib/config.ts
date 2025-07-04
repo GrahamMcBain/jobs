@@ -12,6 +12,8 @@ export const PAYMENT_CONFIG = {
   // Job posting fees (in wei)
   jobPostingFee: "10000000000000000", // 0.01 ETH
   featuredJobFee: "50000000000000000", // 0.05 ETH additional
+  // Payment recipient address
+  recipientAddress: "0x436910fD27aae11Dd2A6e790d1420955909deC25",
   // Native ETH payments for simplicity
   tokenAddress: null,
 } as const;

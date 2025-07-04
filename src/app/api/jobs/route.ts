@@ -1,25 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAllJobs, createJob, searchJobs } from '@/lib/storage';
-import { parseStringList } from '@/lib/utils';
-import { PAYMENT_CONFIG } from '@/lib/config';
+import { db } from '@/lib/db';
+import { Job } from '@/types';
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get('q') || '';
-    const type = searchParams.get('type') || '';
+    const type = searchParams.get('type') || undefined;
     const remote = searchParams.get('remote');
-    const location = searchParams.get('location') || '';
+    const location = searchParams.get('location') || undefined;
 
     const filters = {
-      ...(type && { type }),
-      ...(remote !== null && { remote: remote === 'true' }),
-      ...(location && { location }),
+      type,
+      remote: remote === 'true' ? true : remote === 'false' ? false : undefined,
+      location,
     };
 
-    const jobs = query || Object.keys(filters).length > 0 
-      ? searchJobs(query, filters)
-      : getAllJobs();
+    let jobs: Job[];
+    if (query || Object.values(filters).some(Boolean)) {
+      jobs = await db.searchJobs(query, filters);
+    } else {
+      jobs = await db.getAllJobs();
+    }
 
     return NextResponse.json({ jobs });
   } catch (error) {
@@ -34,46 +36,71 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
+    const {
+      title,
+      company,
+      companyLogoUrl,
+      location,
+      type,
+      remote,
+      salaryMin,
+      salaryMax,
+      salaryCurrency,
+      description,
+      requirements,
+      benefits,
+      tags,
+      applicationUrl,
+      featured,
+      postedBy,
+      paymentTxHash,
+      paymentAmount,
+    } = body;
+
     // Validate required fields
-    const requiredFields = ['title', 'company', 'location', 'description', 'postedBy'];
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { error: `Missing required field: ${field}` },
-          { status: 400 }
-        );
-      }
+    if (!title || !company || !location || !type || !description || !postedBy) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      );
     }
 
-    // TODO: Verify payment transaction
-    // In a real implementation, you would:
-    // 1. Verify the payment transaction hash
-    // 2. Check that the payment amount is correct
-    // 3. Ensure the payment hasn't been used before
-    
+    // Validate payment for job posting
+    if (!paymentTxHash) {
+      return NextResponse.json(
+        { error: 'Payment required to post job' },
+        { status: 400 }
+      );
+    }
+
     const jobData = {
-      title: body.title,
-      company: body.company,
-      location: body.location,
-      type: body.type || 'full-time',
-      remote: Boolean(body.remote),
-      salaryMin: body.salaryMin ? parseInt(body.salaryMin) : undefined,
-      salaryMax: body.salaryMax ? parseInt(body.salaryMax) : undefined,
-      salaryCurrency: body.salaryCurrency || 'USD',
-      description: body.description,
-      requirements: parseStringList(body.requirements || ''),
-      benefits: parseStringList(body.benefits || ''),
-      tags: parseStringList(body.tags || ''),
-      postedBy: body.postedBy,
-      applicationUrl: body.applicationUrl || undefined,
-      featured: Boolean(body.featured),
-      paymentTxHash: body.paymentTxHash,
+      title,
+      company,
+      companyLogoUrl,
+      location,
+      type,
+      remote: remote === true,
+      salaryMin: salaryMin ? parseInt(salaryMin) : undefined,
+      salaryMax: salaryMax ? parseInt(salaryMax) : undefined,
+      salaryCurrency: salaryCurrency || 'USD',
+      description,
+      requirements: requirements ? requirements.split('\n').filter(Boolean) : [],
+      benefits: benefits ? benefits.split('\n').filter(Boolean) : [],
+      tags: tags ? tags.split(',').map((tag: string) => tag.trim()).filter(Boolean) : [],
+      applicationUrl,
+      featured: featured === true,
+      postedBy,
+      paymentTxHash,
+      paymentAmount,
+      paymentVerified: false, // Will be verified separately
     };
 
-    const newJob = createJob(jobData);
-    
-    return NextResponse.json({ job: newJob }, { status: 201 });
+    const job = await db.createJob(jobData);
+
+    // TODO: Trigger payment verification in background
+    // You might want to add this to a queue for processing
+
+    return NextResponse.json({ job }, { status: 201 });
   } catch (error) {
     console.error('Error creating job:', error);
     return NextResponse.json(

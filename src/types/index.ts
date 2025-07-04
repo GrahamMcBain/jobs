@@ -2,6 +2,7 @@ export interface Job {
   id: string;
   title: string;
   company: string;
+  companyLogoUrl?: string; // Added for company logo uploads
   location: string;
   type: 'full-time' | 'part-time' | 'contract' | 'internship';
   remote: boolean;
@@ -23,12 +24,15 @@ export interface Job {
   applicationCount: number;
   featured: boolean;
   paymentTxHash?: string; // For tracking job posting payments
+  paymentAmount?: string; // Amount paid in wei
+  paymentVerified?: boolean; // Whether payment has been verified on-chain
   expires?: string;
 }
 
 export interface JobPostForm {
   title: string;
   company: string;
+  companyLogo?: File; // For file upload
   location: string;
   type: 'full-time' | 'part-time' | 'contract' | 'internship';
   remote: boolean;

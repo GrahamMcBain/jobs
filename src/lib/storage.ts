@@ -1,7 +1,8 @@
 import { Job } from '@/types';
+import { db } from './db';
 
-// Simple in-memory storage for demo - in production use a database
-let jobs: Job[] = [
+// Fallback demo data for when database is not available
+const demoJobs: Job[] = [
   {
     id: 'job_demo_1',
     title: 'Senior Frontend Developer',
@@ -111,75 +112,102 @@ let jobs: Job[] = [
   }
 ];
 
-export function getAllJobs(): Job[] {
-  return jobs.sort((a, b) => {
-    // Featured jobs first, then by date
-    if (a.featured && !b.featured) return -1;
-    if (!a.featured && b.featured) return 1;
-    return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime();
-  });
+export async function getAllJobs(): Promise<Job[]> {
+  try {
+    return await db.getAllJobs();
+  } catch (error) {
+    console.warn('Database unavailable, using demo data:', error);
+    return demoJobs.sort((a, b) => {
+      // Featured jobs first, then by date
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime();
+    });
+  }
 }
 
-export function getJobById(id: string): Job | undefined {
-  return jobs.find(job => job.id === id);
+export async function getJobById(id: string): Promise<Job | null> {
+  try {
+    return await db.getJobById(id);
+  } catch (error) {
+    console.warn('Database unavailable, using demo data:', error);
+    return demoJobs.find(job => job.id === id) || null;
+  }
 }
 
-export function createJob(jobData: Omit<Job, 'id' | 'postedAt' | 'applicationCount'>): Job {
-  const newJob: Job = {
-    ...jobData,
-    id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-    postedAt: new Date().toISOString(),
-    applicationCount: 0,
-  };
-  
-  jobs.push(newJob);
-  return newJob;
+export async function createJob(jobData: Omit<Job, 'id' | 'postedAt' | 'applicationCount'>): Promise<Job> {
+  try {
+    return await db.createJob(jobData);
+  } catch (error) {
+    console.warn('Database unavailable, using in-memory storage:', error);
+    // Fallback to in-memory for development
+    const newJob: Job = {
+      ...jobData,
+      id: `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      postedAt: new Date().toISOString(),
+      applicationCount: 0,
+    };
+    
+    demoJobs.push(newJob);
+    return newJob;
+  }
 }
 
-export function searchJobs(query: string, filters?: {
+export async function searchJobs(query: string, filters?: {
   type?: string;
   remote?: boolean;
   location?: string;
-}): Job[] {
-  let filteredJobs = jobs;
-  
-  // Text search
-  if (query) {
-    const searchTerm = query.toLowerCase();
-    filteredJobs = filteredJobs.filter(job => 
-      job.title.toLowerCase().includes(searchTerm) ||
-      job.company.toLowerCase().includes(searchTerm) ||
-      job.description.toLowerCase().includes(searchTerm) ||
-      job.tags.some(tag => tag.toLowerCase().includes(searchTerm))
-    );
-  }
-  
-  // Filters
-  if (filters) {
-    if (filters.type) {
-      filteredJobs = filteredJobs.filter(job => job.type === filters.type);
-    }
-    if (filters.remote !== undefined) {
-      filteredJobs = filteredJobs.filter(job => job.remote === filters.remote);
-    }
-    if (filters.location) {
+}): Promise<Job[]> {
+  try {
+    return await db.searchJobs(query, filters);
+  } catch (error) {
+    console.warn('Database unavailable, using demo data:', error);
+    let filteredJobs = demoJobs;
+    
+    // Text search
+    if (query) {
+      const searchTerm = query.toLowerCase();
       filteredJobs = filteredJobs.filter(job => 
-        job.location.toLowerCase().includes(filters.location!.toLowerCase())
+        job.title.toLowerCase().includes(searchTerm) ||
+        job.company.toLowerCase().includes(searchTerm) ||
+        job.description.toLowerCase().includes(searchTerm) ||
+        job.tags.some(tag => tag.toLowerCase().includes(searchTerm))
       );
     }
+    
+    // Filters
+    if (filters) {
+      if (filters.type) {
+        filteredJobs = filteredJobs.filter(job => job.type === filters.type);
+      }
+      if (filters.remote !== undefined) {
+        filteredJobs = filteredJobs.filter(job => job.remote === filters.remote);
+      }
+      if (filters.location) {
+        filteredJobs = filteredJobs.filter(job => 
+          job.location.toLowerCase().includes(filters.location!.toLowerCase())
+        );
+      }
+    }
+    
+    return filteredJobs.sort((a, b) => {
+      // Featured jobs first, then by date
+      if (a.featured && !b.featured) return -1;
+      if (!a.featured && b.featured) return 1;
+      return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime();
+    });
   }
-  
-  return filteredJobs.sort((a, b) => {
-    // Featured jobs first, then by date
-    if (a.featured && !b.featured) return -1;
-    if (!a.featured && b.featured) return 1;
-    return new Date(b.postedAt).getTime() - new Date(a.postedAt).getTime();
-  });
 }
 
-export function incrementApplicationCount(jobId: string): void {
-  const job = jobs.find(j => j.id === jobId);
-  if (job) {
-    job.applicationCount++;
+export async function incrementApplicationCount(jobId: string): Promise<void> {
+  try {
+    await db.incrementApplicationCount(jobId);
+  } catch (error) {
+    console.warn('Database unavailable:', error);
+    // Fallback for demo data
+    const job = demoJobs.find(j => j.id === jobId);
+    if (job) {
+      job.applicationCount++;
+    }
   }
 }

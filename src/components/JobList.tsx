@@ -24,9 +24,9 @@ export function JobList({ searchQuery = '', filters }: JobListProps) {
       try {
         let result: Job[];
         if (searchQuery || filters) {
-          result = searchJobs(searchQuery, filters);
+          result = await searchJobs(searchQuery, filters);
         } else {
-          result = getAllJobs();
+          result = await getAllJobs();
         }
         setJobs(result);
       } catch (error) {

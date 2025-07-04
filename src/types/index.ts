@@ -24,7 +24,8 @@ export interface Job {
   applicationCount: number;
   featured: boolean;
   paymentTxHash?: string; // For tracking job posting payments
-  paymentAmount?: string; // Amount paid in wei
+  paymentAmount?: string; // Amount paid in token's smallest unit
+  paymentToken?: PaymentToken; // Which token was used for payment
   paymentVerified?: boolean; // Whether payment has been verified on-chain
   expires?: string;
 }
@@ -86,4 +87,13 @@ export interface PaymentConfig {
   featuredJobFee: string; // additional fee for featured listings
   contractAddress: string; // smart contract for payments
   chainId: number; // Base mainnet
+}
+
+export type PaymentToken = 'ETH' | 'USDC';
+
+export interface PaymentDetails {
+  token: PaymentToken;
+  amount: string; // Amount in token's smallest unit
+  txHash: string;
+  verified: boolean;
 }

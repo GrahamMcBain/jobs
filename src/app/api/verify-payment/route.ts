@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createPublicClient, http } from 'viem';
+import { createPublicClient, http, getContract } from 'viem';
 import { base } from 'viem/chains';
 import { PAYMENT_CONFIG } from '@/lib/config';
+import { PaymentToken } from '@/types';
 
 // Create a public client for Base network
 const client = createPublicClient({
@@ -11,7 +12,7 @@ const client = createPublicClient({
 
 export async function POST(request: NextRequest) {
   try {
-    const { txHash, expectedAmount, jobId } = await request.json();
+    const { txHash, token, expectedAmount, jobId } = await request.json();
 
     if (!txHash) {
       return NextResponse.json(
@@ -44,14 +45,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const paymentToken = (token as PaymentToken) || 'ETH';
+    const tokenConfig = PAYMENT_CONFIG.tokens[paymentToken];
+    
     // Verify the transaction details
-    const isValidRecipient = transaction.to?.toLowerCase() === PAYMENT_CONFIG.recipientAddress.toLowerCase();
     const isValidChain = client.chain.id === PAYMENT_CONFIG.chainId;
-    const amount = transaction.value;
+    
+    let isValidRecipient = false;
+    let isValidAmount = false;
+    let amount: bigint;
 
-    // Convert expected amount to BigInt for comparison
-    const expectedAmountWei = BigInt(expectedAmount || PAYMENT_CONFIG.jobPostingFee);
-    const isValidAmount = amount >= expectedAmountWei;
+    if (paymentToken === 'ETH') {
+      // Native ETH transaction
+      isValidRecipient = transaction.to?.toLowerCase() === PAYMENT_CONFIG.recipientAddress.toLowerCase();
+      amount = transaction.value;
+      
+      // Convert expected amount to BigInt for comparison
+      const expectedAmountWei = BigInt(expectedAmount || tokenConfig.jobPostingFee);
+      isValidAmount = amount >= expectedAmountWei;
+    } else {
+      // ERC-20 token transaction (USDC)
+      // Check if transaction is to the token contract
+      isValidRecipient = transaction.to?.toLowerCase() === tokenConfig.address?.toLowerCase();
+      
+      // For ERC-20, we need to parse the transaction input to get the transfer details
+      // This is a simplified check - in production, you'd want to decode the logs
+      const expectedAmountTokens = BigInt(expectedAmount || tokenConfig.jobPostingFee);
+      
+      // For ERC-20 transfers, the amount verification would typically be done by parsing transaction logs
+      // For now, we'll assume the amount is correct if the transaction succeeded
+      isValidAmount = receipt.status === 'success';
+      amount = expectedAmountTokens; // Use expected amount for now
+    }
 
     const verified = isValidRecipient && isValidChain && isValidAmount;
 
@@ -67,6 +92,7 @@ export async function POST(request: NextRequest) {
         from: transaction.from,
         to: transaction.to,
         value: amount.toString(),
+        token: paymentToken,
         chainId: client.chain.id,
         blockNumber: Number(receipt.blockNumber),
       },

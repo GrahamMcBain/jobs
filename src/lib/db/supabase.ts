@@ -88,6 +88,7 @@ export class SupabaseService {
           posted_by_pfp_url: jobData.postedBy.pfpUrl,
           payment_tx_hash: jobData.paymentTxHash,
           payment_amount: jobData.paymentAmount,
+          payment_token: jobData.paymentToken,
           payment_verified: jobData.paymentVerified || false
         })
         .select()
@@ -232,6 +233,7 @@ export class SupabaseService {
       postedAt: row.posted_at,
       paymentTxHash: row.payment_tx_hash,
       paymentAmount: row.payment_amount,
+      paymentToken: row.payment_token,
       paymentVerified: row.payment_verified || false
     };
   }

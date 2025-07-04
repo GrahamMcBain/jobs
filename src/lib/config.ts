@@ -9,13 +9,33 @@ export const MINIAPP_CONFIG = {
 export const PAYMENT_CONFIG = {
   // Base mainnet
   chainId: 8453,
-  // Job posting fees (in wei)
-  jobPostingFee: "10000000000000000", // 0.01 ETH
-  featuredJobFee: "50000000000000000", // 0.05 ETH additional
   // Payment recipient address
   recipientAddress: "0x436910fD27aae11Dd2A6e790d1420955909deC25",
-  // Native ETH payments for simplicity
-  tokenAddress: null,
+  // Supported payment tokens
+  tokens: {
+    ETH: {
+      address: null, // Native ETH
+      symbol: "ETH",
+      decimals: 18,
+      jobPostingFee: "10000000000000000", // 0.01 ETH
+      featuredJobFee: "50000000000000000", // 0.05 ETH additional
+      priceDisplay: {
+        jobPosting: "0.01 ETH",
+        featured: "0.05 ETH"
+      }
+    },
+    USDC: {
+      address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // Base USDC
+      symbol: "USDC",
+      decimals: 6,
+      jobPostingFee: "25000000", // $25 USDC (6 decimals)
+      featuredJobFee: "125000000", // $125 USDC additional
+      priceDisplay: {
+        jobPosting: "$25 USDC",
+        featured: "$125 USDC"
+      }
+    }
+  }
 } as const;
 
 export const NEYNAR_CONFIG = {

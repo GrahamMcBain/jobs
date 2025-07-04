@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
       postedBy,
       paymentTxHash,
       paymentAmount,
+      paymentToken,
     } = body;
 
     // Validate required fields
@@ -92,6 +93,7 @@ export async function POST(request: NextRequest) {
       postedBy,
       paymentTxHash,
       paymentAmount,
+      paymentToken,
       paymentVerified: false, // Will be verified separately
     };
 

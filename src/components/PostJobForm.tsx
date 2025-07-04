@@ -6,14 +6,16 @@ import { usePayment } from '@/lib/hooks/usePayment';
 import { uploadCompanyLogo, getImagePreviewUrl, revokeImagePreviewUrl, validateImage } from '@/lib/upload';
 import { sdk } from '@farcaster/miniapp-sdk';
 import { PAYMENT_CONFIG } from '@/lib/config';
+import { PaymentToken } from '@/types';
 
 export function PostJobForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [companyLogo, setCompanyLogo] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [paymentStep, setPaymentStep] = useState<'form' | 'payment' | 'success'>('form');
+  const [selectedToken, setSelectedToken] = useState<PaymentToken>('ETH');
   const context = useMiniApp();
-  const { processPayment, verifyPayment, isProcessing, isConnected } = usePayment();
+  const { processPayment, verifyPayment, getTokenPricing, isProcessing, isConnected } = usePayment();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -59,10 +61,8 @@ export function PostJobForm() {
     setLogoPreview(getImagePreviewUrl(file));
   };
 
-  const calculateTotalAmount = () => {
-    const baseAmount = 0.01; // Base job posting fee
-    const featuredAmount = formData.featured ? 0.05 : 0;
-    return baseAmount + featuredAmount;
+  const getCurrentPricing = () => {
+    return getTokenPricing(selectedToken);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,8 +79,7 @@ export function PostJobForm() {
 
     try {
       // Step 1: Process payment
-      const totalAmount = calculateTotalAmount();
-      const paymentResult = await processPayment(totalAmount.toString(), formData.featured);
+      const paymentResult = await processPayment(selectedToken, formData.featured);
 
       if (!paymentResult.success) {
         throw new Error(paymentResult.error || 'Payment failed');
@@ -96,8 +95,8 @@ export function PostJobForm() {
       }
 
       // Step 3: Verify payment (optional - can be done in background)
-      const paymentVerified = paymentResult.txHash ? 
-        await verifyPayment(paymentResult.txHash) : false;
+      const paymentVerified = paymentResult.txHash && paymentResult.amount ? 
+        await verifyPayment(paymentResult.txHash, selectedToken, paymentResult.amount) : false;
 
       // Step 4: Create job posting
       const jobData = {
@@ -110,7 +109,8 @@ export function PostJobForm() {
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         postedBy: context.user,
         paymentTxHash: paymentResult.txHash,
-        paymentAmount: (BigInt(totalAmount * 1e18)).toString(), // Convert to wei
+        paymentAmount: paymentResult.amount,
+        paymentToken: selectedToken,
         paymentVerified,
       };
 
@@ -410,12 +410,38 @@ export function PostJobForm() {
 
       {/* Payment Info */}
       <div className="bg-purple-50 rounded-lg border border-purple-200 p-4">
-        <h3 className="font-semibold text-purple-900 mb-2">💰 Payment Required</h3>
+        <h3 className="font-semibold text-purple-900 mb-3">💰 Payment Required</h3>
+        
+        {/* Token Selection */}
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-purple-800 mb-2">Payment Token</label>
+          <div className="flex gap-2">
+            {Object.entries(PAYMENT_CONFIG.tokens).map(([token, config]) => (
+              <button
+                key={token}
+                type="button"
+                onClick={() => setSelectedToken(token as PaymentToken)}
+                className={`flex-1 px-3 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                  selectedToken === token
+                    ? 'border-purple-500 bg-purple-100 text-purple-700'
+                    : 'border-purple-200 bg-white text-purple-600 hover:bg-purple-50'
+                }`}
+              >
+                <div className="text-center">
+                  <div className="font-bold">{config.symbol}</div>
+                  <div className="text-xs">{config.priceDisplay.jobPosting}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Pricing Details */}
         <div className="text-sm text-purple-700">
-          <div>• Job posting: 0.01 ETH</div>
-          {formData.featured && <div>• Featured listing: +0.05 ETH</div>}
-          <div className="font-medium mt-1">
-            Total: {calculateTotalAmount()} ETH
+          <div>• Job posting: {getCurrentPricing().jobPosting}</div>
+          {formData.featured && <div>• Featured listing: +{getCurrentPricing().featured}</div>}
+          <div className="font-medium mt-2 text-base">
+            Total: {getCurrentPricing().jobPosting}{formData.featured && ` + ${getCurrentPricing().featured}`}
           </div>
           <div className="text-xs mt-2 text-purple-600">
             Payment to: {PAYMENT_CONFIG.recipientAddress}
@@ -429,7 +455,7 @@ export function PostJobForm() {
         disabled={isSubmitting || isProcessing}
         className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
-        {isSubmitting ? 'Processing...' : `Post Job & Pay ${calculateTotalAmount()} ETH`}
+        {isSubmitting ? 'Processing...' : `Post Job & Pay ${getCurrentPricing().jobPosting}${formData.featured ? ` + ${getCurrentPricing().featured}` : ''}`}
       </button>
 
       {!isConnected && (

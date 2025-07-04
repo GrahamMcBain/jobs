@@ -31,6 +31,7 @@ CREATE TABLE jobs (
   expires_at TIMESTAMPTZ DEFAULT (NOW() + INTERVAL '30 days'),
   payment_tx_hash VARCHAR(255),
   payment_amount VARCHAR(50),
+  payment_token VARCHAR(10) DEFAULT 'ETH' CHECK (payment_token IN ('ETH', 'USDC')),
   payment_verified BOOLEAN DEFAULT false,
   status VARCHAR(50) DEFAULT 'active' CHECK (status IN ('active', 'expired', 'removed')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -44,8 +45,8 @@ CREATE TABLE payment_transactions (
   tx_hash VARCHAR(255) UNIQUE NOT NULL,
   from_address VARCHAR(255) NOT NULL,
   to_address VARCHAR(255) NOT NULL,
-  amount VARCHAR(50) NOT NULL, -- Amount in wei
-  currency VARCHAR(10) DEFAULT 'ETH',
+  amount VARCHAR(50) NOT NULL, -- Amount in token's smallest unit
+  currency VARCHAR(10) DEFAULT 'ETH' CHECK (currency IN ('ETH', 'USDC')),
   chain_id INTEGER NOT NULL DEFAULT 8453, -- Base mainnet
   block_number BIGINT,
   verified BOOLEAN DEFAULT false,

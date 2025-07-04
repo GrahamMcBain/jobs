@@ -1,32 +1,45 @@
-# Farcaster Job Board
+# Farcaster Jobs Mini App
 
-A Next.js application that integrates with Farcaster using Neynar's SDK to create a job board platform on the Farcaster protocol.
+A Farcaster Mini App for posting and discovering job opportunities within the Farcaster ecosystem. Built with Next.js and integrated with Farcaster's native payment system.
 
 ## Features
 
-- **Farcaster Authentication**: Sign in with Neynar (SIWN) for seamless user onboarding
-- **Personalized Feed**: View and interact with Farcaster casts related to jobs and opportunities
-- **Job Posting**: Post job opportunities directly to the Farcaster network
-- **Real-time Interactions**: Like, recast, and comment on job-related casts
-- **Cast Composition**: Create new casts to share job opportunities
-- **User Profiles**: Display Farcaster user information and social proof
-- **Job Discovery**: Browse and search for job opportunities in the ecosystem
+### For Job Seekers
+- 🔍 Browse and search job listings
+- 📱 Apply directly through the mini app
+- 🔗 Share interesting jobs with your network
+- 🏷️ Filter by job type, location, and remote options
+- ⭐ Discover featured job postings
+
+### For Employers
+- 📝 Post job listings with rich details
+- 💳 Pay posting fees through Farcaster wallet integration
+- ✨ Feature listings for increased visibility
+- 📊 Track application counts
+- 🚀 Viral sharing through Farcaster's social graph
+
+### Mini App Features
+- 🎯 Native Farcaster integration
+- 💰 Seamless crypto payments (Base network)
+- 📲 Optimized for mobile viewing (424x695px)
+- 🔔 Push notifications for new opportunities
+- 🔄 Real-time updates and interactions
 
 ## Tech Stack
 
-- **Frontend**: Next.js 15, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, Neynar Node.js SDK
-- **Authentication**: Neynar Sign-In (SIWN)
-- **Social Integration**: Neynar React SDK, Farcaster Protocol
-- **Styling**: Tailwind CSS, Heroicons
+- **Framework**: Next.js 15 with App Router
+- **Styling**: Tailwind CSS
+- **Farcaster Integration**: @farcaster/miniapp-sdk
+- **Blockchain**: Wagmi for Ethereum wallet connections
+- **Network**: Base (Layer 2) for low-cost transactions
+- **Storage**: In-memory (easily replaceable with database)
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
-- Neynar API Key and Client ID
+- Node.js 22.11.0 or higher
+- Farcaster account for testing
 
 ### Installation
 
@@ -46,126 +59,140 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in your Neynar credentials:
+Add your configuration:
 ```env
+NEXT_PUBLIC_APP_URL=https://your-domain.com
 NEYNAR_API_KEY=your_neynar_api_key_here
-NEXT_PUBLIC_NEYNAR_CLIENT_ID=your_neynar_client_id_here
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-4. Run the development server:
+4. Update the manifest file:
+Edit `public/.well-known/farcaster.json` with your domain and signed account association.
+
+5. Run the development server:
 ```bash
 npm run dev
 ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser.
+6. Open in Farcaster:
+Use the [Mini App Debug Tool](https://farcaster.xyz/~/developers/mini-apps/debug) to preview your app.
 
-## Environment Variables
+## Mini App Structure
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEYNAR_API_KEY` | Server-side API key for Neynar | Yes |
-| `NEXT_PUBLIC_NEYNAR_CLIENT_ID` | Client-side ID for Neynar authentication | Yes |
-| `NEXT_PUBLIC_APP_URL` | Application URL for webhooks and redirects | No |
+### Core Components
 
-## Project Structure
+- **MiniAppProvider**: Handles SDK initialization and context
+- **JobCard**: Individual job listing display
+- **JobList**: Job feed with search and filtering
+- **PostJobForm**: Job posting form with payment integration
 
-```
-src/
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   │   ├── auth/          # Authentication endpoints
-│   │   ├── casts/         # Cast management
-│   │   ├── feed/          # Feed data
-│   │   ├── reactions/     # Like/recast handling
-│   │   └── webhooks/      # Webhook endpoints
-│   ├── feed/              # Feed page
-│   ├── jobs/              # Job listings page
-│   ├── post-job/          # Job posting page
-│   └── layout.tsx         # Root layout
-├── components/            # Reusable components
-│   ├── compose/           # Cast composition
-│   ├── feed/              # Feed components
-│   └── layout/            # Layout components
-├── contexts/              # React contexts
-├── lib/                   # Utility functions
-└── types/                 # TypeScript types
-```
+### Key Features
 
-## API Routes
+#### Payment Integration
+- Job posting fee: 0.01 ETH
+- Featured listing: +0.05 ETH
+- Payments processed through user's connected wallet
+- Base network for low gas fees
 
-- `POST /api/auth/user` - Fetch user data after authentication
-- `GET /api/feed` - Get Farcaster feed with filters
-- `POST /api/casts` - Publish new casts
-- `DELETE /api/casts` - Delete casts
-- `POST /api/reactions` - Add reactions (like/recast)
-- `DELETE /api/reactions` - Remove reactions
-- `POST /api/webhooks/neynar` - Handle Neynar webhooks
+#### Social Features
+- Share jobs through Farcaster casts
+- Tag mentions for viral distribution
+- Profile integration showing job poster details
 
-## Key Features Implementation
+### API Routes
 
-### Authentication with SIWN
-The app uses Neynar's Sign-In with Neynar (SIWN) for authentication, which covers gas fees for new users and provides a seamless onboarding experience.
+- `GET /api/jobs` - Fetch job listings with optional search/filters
+- `POST /api/jobs` - Create new job posting (requires payment)
+- `GET /api/jobs/[id]` - Get specific job details
+- `POST /api/jobs/[id]` - Apply to job (increment counter)
 
-### Feed Integration
-Leverages Neynar's Feed API to display personalized content, trending casts, and job-specific feeds from the Farcaster network.
+## Manifest Configuration
 
-### Real-time Interactions
-Implements like, recast, and comment functionality using Neynar's reaction APIs with optimistic UI updates.
+The app includes a complete manifest at `/.well-known/farcaster.json`:
 
-### Cast Composition
-Allows users to compose and publish new casts directly to Farcaster, with support for mentions, embeds, and replies.
-
-### Webhook Support
-Includes webhook endpoints for real-time event processing, enabling features like live notifications and feed updates.
-
-## Development Commands
-
-```bash
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Type checking
-npm run type-check
-
-# Linting
-npm run lint
-
-# Start production server
-npm start
+```json
+{
+  "miniapp": {
+    "version": "1",
+    "name": "Farcaster Jobs",
+    "description": "Find and post jobs in the Farcaster ecosystem",
+    "requiredChains": ["eip155:8453"],
+    "requiredCapabilities": [
+      "actions.composeCast",
+      "actions.openUrl", 
+      "wallet.getEthereumProvider"
+    ]
+  }
+}
 ```
 
 ## Deployment
 
-The application can be deployed on platforms like Vercel, Netlify, or any Node.js hosting service.
+### Vercel (Recommended)
 
-### Vercel Deployment
+1. Connect repository to Vercel
+2. Set environment variables
+3. Deploy
+4. Update manifest with production URL
+5. Sign manifest with your Farcaster account
 
-1. Connect your GitHub repository to Vercel
-2. Add environment variables in the Vercel dashboard
-3. Deploy automatically on push to main branch
+### Domain Requirements
+
+- HTTPS required for mini apps
+- Must serve manifest at `/.well-known/farcaster.json`
+- Domain must match manifest configuration
+
+## Payment Flow
+
+1. User fills out job posting form
+2. Form validates required fields
+3. Payment modal opens with job posting fees
+4. User confirms transaction through Farcaster wallet
+5. Transaction is verified on Base network
+6. Job is created and published
+7. Success cast is composed automatically
+
+## Development Notes
+
+### Storage
+Currently uses in-memory storage for simplicity. For production:
+- Replace with PostgreSQL/MongoDB
+- Add proper indexing for search
+- Implement job expiration logic
+
+### Security
+- Validate all form inputs
+- Verify payment transactions
+- Implement rate limiting
+- Sanitize user content
+
+### Performance
+- Optimize images for mobile
+- Implement proper caching
+- Use pagination for large job lists
+- Minimize bundle size
+
+## Testing
+
+Test your mini app using Farcaster's tools:
+
+1. **Debug Tool**: https://farcaster.xyz/~/developers/mini-apps/debug
+2. **Manifest Tool**: https://farcaster.xyz/~/developers/mini-apps/manifest
+3. **Preview Tool**: https://farcaster.xyz/~/developers/mini-apps/preview
 
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create feature branch
+3. Implement changes
+4. Test in Farcaster environment
+5. Submit pull request
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- [Neynar](https://neynar.com) for providing the Farcaster infrastructure and SDKs
-- [Farcaster](https://farcaster.xyz) for the decentralized social protocol
-- The Farcaster community for inspiration and support
+MIT License - see LICENSE file for details.
 
 ## Support
 
-For support, please open an issue on GitHub or reach out on Farcaster [@yourusername](https://warpcast.com/yourusername).
+- [Farcaster Mini Apps Documentation](https://miniapps.farcaster.xyz)
+- [Farcaster Developer Community](https://farcaster.xyz/~/channel/fc-devs)
+- [GitHub Issues](https://github.com/GrahamMcBain/job-board/issues)

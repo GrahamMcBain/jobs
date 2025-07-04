@@ -1,8 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+  return clsx(inputs);
 }
 
 export function formatDate(date: string | Date): string {
@@ -16,11 +15,11 @@ export function formatDate(date: string | Date): string {
   if (diffInMinutes < 1) {
     return 'now';
   } else if (diffInMinutes < 60) {
-    return `${diffInMinutes}m`;
+    return `${diffInMinutes}m ago`;
   } else if (diffInHours < 24) {
-    return `${diffInHours}h`;
+    return `${diffInHours}h ago`;
   } else if (diffInDays < 7) {
-    return `${diffInDays}d`;
+    return `${diffInDays}d ago`;
   } else {
     return d.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -30,32 +29,9 @@ export function formatDate(date: string | Date): string {
   }
 }
 
-export function formatNumber(num: number): string {
-  if (num >= 1000000) {
-    return (num / 1000000).toFixed(1) + 'M';
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(1) + 'K';
-  }
-  return num.toString();
-}
-
-export function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-}
-
-export function extractUrls(text: string): string[] {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  return text.match(urlRegex) || [];
-}
-
-export function extractMentions(text: string): string[] {
-  const mentionRegex = /@([a-zA-Z0-9_]+)/g;
-  const matches = text.match(mentionRegex) || [];
-  return matches.map(match => match.substring(1));
-}
-
-export function formatSalary(min: number, max: number, currency: string = 'USD'): string {
+export function formatSalary(min?: number, max?: number, currency: string = 'USD'): string {
+  if (!min && !max) return 'Salary not specified';
+  
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
@@ -63,9 +39,53 @@ export function formatSalary(min: number, max: number, currency: string = 'USD')
     maximumFractionDigits: 0,
   });
   
-  if (min === max) {
-    return formatter.format(min);
+  if (min && max && min !== max) {
+    return `${formatter.format(min)} - ${formatter.format(max)}`;
+  } else if (min) {
+    return `${formatter.format(min)}+`;
+  } else if (max) {
+    return `Up to ${formatter.format(max)}`;
   }
   
-  return `${formatter.format(min)} - ${formatter.format(max)}`;
+  return 'Salary not specified';
+}
+
+export function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + '...';
+}
+
+export function formatJobType(type: string): string {
+  return type.split('-').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1)
+  ).join(' ');
+}
+
+export function parseStringList(str: string): string[] {
+  return str
+    .split(/[,\n]/)
+    .map(item => item.trim())
+    .filter(item => item.length > 0);
+}
+
+export function formatEthAmount(wei: string): string {
+  const eth = parseFloat(wei) / 1e18;
+  return `${eth} ETH`;
+}
+
+export function generateJobId(): string {
+  return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+export function isValidUrl(string: string): boolean {
+  try {
+    new URL(string);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+export function createShareText(job: { title: string; company: string }): string {
+  return `🚀 ${job.title} at ${job.company}\n\nCheck out this job opportunity on Farcaster Jobs!`;
 }

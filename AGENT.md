@@ -1,16 +1,16 @@
-# Farcaster Job Board - Agent Context
+# Farcaster Jobs Mini App - Agent Context
 
 ## Project Overview
-This is a Next.js application that integrates with Farcaster using Neynar's SDK to create a job board platform on the Farcaster protocol.
+This is a Farcaster Mini App that provides job board functionality within the Farcaster ecosystem. Users can browse and post jobs directly within Farcaster clients, with payments handled through integrated crypto wallets.
 
 ## Key Technologies
 - Next.js 15 with App Router
 - TypeScript
 - Tailwind CSS
-- Neynar React SDK (@neynar/react)
-- Neynar Node.js SDK (@neynar/nodejs-sdk)
-- Farcaster Frame SDK (@farcaster/frame-sdk)
-- Wagmi for wallet connections
+- @farcaster/miniapp-sdk for native Farcaster integration
+- Wagmi for Ethereum wallet connections
+- Viem for blockchain interactions
+- Base network for low-cost transactions
 
 ## Development Commands
 ```bash
@@ -31,27 +31,29 @@ npm start
 ```
 
 ## Environment Variables
-- `NEYNAR_API_KEY`: Server-side API key for Neynar
-- `NEXT_PUBLIC_NEYNAR_CLIENT_ID`: Client-side ID for Neynar authentication
-- `NEXT_PUBLIC_APP_URL`: Application URL for webhooks and redirects
+- `NEXT_PUBLIC_APP_URL`: Application URL for mini app hosting
+- `NEYNAR_API_KEY`: Optional API key for extended Neynar features
 
 ## Project Structure
 - `/src/app`: Next.js App Router pages and API routes
-- `/src/components`: Reusable React components
+- `/src/components`: React components optimized for mini app UI
 - `/src/lib`: Utility functions and configurations
 - `/src/types`: TypeScript type definitions
-- `/src/hooks`: Custom React hooks
+- `/public/.well-known/`: Mini app manifest and metadata
 
 ## Key Features
-1. Farcaster authentication with Sign-In with Neynar (SIWN)
-2. Personalized job feed from Farcaster
-3. Job posting and application functionality
-4. User profiles and discovery
-5. Real-time updates via webhooks
-6. Mini-app (Frame) integration for viral sharing
+1. **Native Mini App Experience**: Runs inside Farcaster clients (424x695px)
+2. **Job Browsing**: Search and filter job opportunities
+3. **Job Posting**: Create listings with crypto payment (0.01 ETH)
+4. **Featured Listings**: Premium placement for +0.05 ETH
+5. **Social Integration**: Share jobs through Farcaster casts
+6. **Wallet Integration**: Seamless payments through connected wallets
+7. **Mobile Optimized**: Touch-friendly interface with safe area handling
 
 ## Development Notes
-- Uses Neynar's hosted infrastructure to avoid managing Farcaster Hubs
-- Implements security best practices for API key management
-- Follows Farcaster protocol standards for social interactions
-- Designed for scalability with proper webhook handling
+- Built specifically as a Farcaster Mini App, not a standalone web app
+- Uses Base network for low transaction costs
+- Implements Mini App SDK for native Farcaster features
+- Handles payment verification and job posting workflow
+- Optimized for mobile viewing within Farcaster clients
+- Includes proper manifest configuration for mini app distribution
